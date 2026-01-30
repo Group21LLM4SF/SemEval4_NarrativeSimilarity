@@ -36,6 +36,8 @@ This repository contains the implementation for [SemEval-2026 Task 4: Narrative 
 
 ## Model Architecture
 
+<img src="./imgs/architecture.png" alt="diagram" width="700">
+
 **AspectSupervisedEncoder** consists of:
 
 1. **Base Encoder**: Pre-trained transformer (DistilBERT/BERT/MPNet) with optional LoRA
