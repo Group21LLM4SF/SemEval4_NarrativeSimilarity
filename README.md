@@ -29,10 +29,9 @@ This repository contains the implementation for [SemEval-2026 Task 4: Narrative 
 ├── notebook/
 │   ├── training.ipynb        # Model training notebook
 │   └── data_preprocessing.ipynb  # Data augmentation pipeline
-├── data/
-│   ├── raw/                  # Original track data
-│   └── processed/            # Processed triplets with aspects
-└── checkpoints/              # Saved model weights
+└── data/
+    ├── raw/                  # Original track data
+    └── processed/            # Processed triplets with aspects
 ```
 
 ## Model Architecture
