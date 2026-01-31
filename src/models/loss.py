@@ -27,6 +27,13 @@ class AspectMSELoss(nn.Module):
         loss_outcome = self.mse(pred['outcome'], target['outcome'])
         return (loss_theme + loss_action + loss_outcome) / 3
 
+class AspectCosineLoss(nn.Module):
+    def forward(self, pred: dict, target: dict) -> torch.Tensor:
+        loss_theme = 1 - F.cosine_similarity(pred['theme'], target['theme'], dim=-1).mean()
+        loss_action = 1 - F.cosine_similarity(pred['action'], target['action'], dim=-1).mean()
+        loss_outcome = 1 - F.cosine_similarity(pred['outcome'], target['outcome'], dim=-1).mean()
+        return (loss_theme + loss_action + loss_outcome) / 3
+
 
 class AspectCrossLoss(nn.Module):
     def __init__(self, margin: float = 0.3):
@@ -56,11 +63,18 @@ class CombinedLoss(nn.Module):
         triplet_margin: float = 0.5,
         cross_margin: float = 0.3,
         gamma: float = 0.3,
-        beta: float = 0.2
+        beta: float = 0.2,
+        aspect_loss_type: str = 'mse'  # 'mse' or 'cosine'
     ):
         super().__init__()
         self.triplet_loss = TripletLoss(margin=triplet_margin)
-        self.aspect_mse_loss = AspectMSELoss()
+        if aspect_loss_type == 'mse':
+            self.aspect_loss = AspectMSELoss()
+        elif aspect_loss_type == 'cosine':
+            self.aspect_loss = AspectCosineLoss()
+        else:
+            raise ValueError("aspect_loss_type must be 'mse' or 'cosine'")
+
         self.aspect_cross_loss = AspectCrossLoss(margin=cross_margin)
         self.gamma = gamma
         self.beta = beta
@@ -77,11 +91,11 @@ class CombinedLoss(nn.Module):
             outputs['negative_emb']
         )
         
-        # Aspect MSE loss
+        # Aspect loss
         l_aspect = (
-            self.aspect_mse_loss(outputs['anchor_pred_aspects'], outputs['anchor_target_aspects']) +
-            self.aspect_mse_loss(outputs['positive_pred_aspects'], outputs['positive_target_aspects']) +
-            self.aspect_mse_loss(outputs['negative_pred_aspects'], outputs['negative_target_aspects'])
+            self.aspect_loss(outputs['anchor_pred_aspects'], outputs['anchor_target_aspects']) +
+            self.aspect_loss(outputs['positive_pred_aspects'], outputs['positive_target_aspects']) +
+            self.aspect_loss(outputs['negative_pred_aspects'], outputs['negative_target_aspects'])
         ) / 3
         
         # Cross-attention loss

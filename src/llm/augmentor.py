@@ -28,7 +28,7 @@ class AugmentTripletGenerator:
         logger.info(f"Initialized with {model_name}")
     
     def _build_messages(self, row: dict, n_triplets: int = 2) -> list[dict]:   
-        user_content = format_augment_prompt(row, n_triplets)
+        user_content = format_augment_prompt_2(row, n_triplets)
         
         return [
             {"role": "system", "content": SYSTEM_PROMPT_AUGMENT},
@@ -49,15 +49,15 @@ class AugmentTripletGenerator:
         output_file = Path(output_path)
 
         with open(output_file, "w") as f:
-            for _ in range(len(temps)):
+            for temp in temps:
                 for idx, row in enumerate(tqdm(dev_data, desc="Building batch")):
                     triplet_id = row['triplet_id']
                     request = {
-                        "custom_id": f"augment-{idx}-{triplet_id}",
+                        "custom_id": f"augment-{triplet_id}_{idx}_temp{temp}",
                         "body": {
                             "model": self.model_name,
                             "messages": self._build_messages(row, n_triplets_per_sample),
-                            "temperature": random.choice(temps),
+                            "temperature": temp,
                             "response_format": {"type": "json_object"}
                         }
                     }
@@ -76,14 +76,14 @@ class AugmentTripletGenerator:
             for line in f:
                 result = json.loads(line)
                 custom_id = result.get("custom_id", "")
-                original_triplet_id = custom_id.split("-")[-1] if custom_id else None
+                triplet_id = custom_id.split("-")[-1] if custom_id else None
                 try:
                     content = result["response"]["body"]["choices"][0]["message"]["content"]
                     payload = json.loads(content)  # dict from model JSON
                     if isinstance(payload, dict):
 
                         for triplet in payload.get("triplets", []):
-                            triplet["original_triplet_id"] = original_triplet_id
+                            triplet["triplet_id"] = triplet_id
 
                         response = AugmentedResponse.model_validate_json(json.dumps(payload))
                         results.extend(response.triplets)

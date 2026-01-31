@@ -20,11 +20,12 @@ class Trainer:
         triplet_margin: float = 0.5,
         cross_margin: float = 0.3,
         gamma: float = 0.3,
-        beta: float = 0.2
+        beta: float = 0.2,
+        aspect_loss_type: str = 'mse'  # 'mse' or 'cosine'
     ):
         self.model = model.to(device)
         self.device = device
-        self.criterion = CombinedLoss(triplet_margin, cross_margin, gamma, beta)
+        self.criterion = CombinedLoss(triplet_margin, cross_margin, gamma, beta, aspect_loss_type)
         
         trainable = [p for p in model.parameters() if p.requires_grad]
         self.optimizer = torch.optim.AdamW(trainable, lr=lr, weight_decay=weight_decay)

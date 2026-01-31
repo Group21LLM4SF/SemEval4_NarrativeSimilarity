@@ -88,25 +88,28 @@ class AspectTripletDatasetDev(Dataset):
 def save_aspect_triplets(triplets, filepath):
     with open(filepath, 'w') as f:
         for triplet in triplets:
-            json_line = {
-                'triplet_id': triplet.triplet_id,
-                'anchor': triplet.anchor,
-                'positive': triplet.positive,
-                'negative': triplet.negative,
-                # theme
-                'anchor_theme': triplet.anchor_aspects.abstract_theme,
-                'positive_theme': triplet.positive_aspects.abstract_theme,
-                'negative_theme': triplet.negative_aspects.abstract_theme,
-                # course_of_action
-                'anchor_action' : triplet.anchor_aspects.course_of_action,
-                'positive_action' : triplet.positive_aspects.course_of_action,
-                'negative_action' : triplet.negative_aspects.course_of_action,
-                # outcomes
-                'anchor_outcome' : triplet.anchor_aspects.outcomes,
-                'positive_outcome' : triplet.positive_aspects.outcomes,
-                'negative_outcome' : triplet.negative_aspects.outcomes 
-            }
-            f.write(json.dumps(json_line) + '\n')
+            try:
+                json_line = {
+                    'triplet_id': triplet.triplet_id,
+                    'anchor': triplet.anchor,
+                    'positive': triplet.positive,
+                    'negative': triplet.negative,
+                    # theme
+                    'anchor_theme': triplet.anchor_aspects.abstract_theme,
+                    'positive_theme': triplet.positive_aspects.abstract_theme,
+                    'negative_theme': triplet.negative_aspects.abstract_theme,
+                    # course_of_action
+                    'anchor_action' : triplet.anchor_aspects.course_of_action,
+                    'positive_action' : triplet.positive_aspects.course_of_action,
+                    'negative_action' : triplet.negative_aspects.course_of_action,
+                    # outcomes
+                    'anchor_outcome' : triplet.anchor_aspects.outcomes,
+                    'positive_outcome' : triplet.positive_aspects.outcomes,
+                    'negative_outcome' : triplet.negative_aspects.outcomes 
+                }
+                f.write(json.dumps(json_line) + '\n')
+            except Exception as e:
+                continue
 
 def save_eval(eval_data, filepath):
     with open(filepath, 'w') as f:

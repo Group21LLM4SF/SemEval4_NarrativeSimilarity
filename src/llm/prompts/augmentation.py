@@ -1,6 +1,6 @@
 """Prompts for augmentation-based triplet generation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 SYSTEM_PROMPT_AUGMENT = """You generate narrative triplet augmentations based on DEEP STRUCTURAL SIMILARITY.
 
@@ -77,13 +77,33 @@ def format_augment_prompt(row: dict, n_triplets: int = 2) -> str:
         n_triplets=n_triplets
     )
 
+def format_augment_prompt_2(row: dict, n_triplets: int = 2) -> str:
+    """Format the user prompt from a dev data row."""
+    
+    return USER_PROMPT_AUGMENT.format(
+        anchor=row['anchor_text'],
+        anchor_len=len(row['anchor_text'].split()),
+        similar=row['similar'],
+        similar_len=len(row['similar'].split()),
+        dissimilar=row['dissimilar'],
+        dissimilar_len=len(row['dissimilar'].split()),
+        n_triplets=n_triplets
+    )
+
 class NewTriplet(BaseModel):
-    original_triplet_id : str | None
+    triplet_id: str | None = None
     anchor: str
     similar: str
     dissimilar: str
     similarity_reason: str
     dissimilarity_reason: str
+
+    @property
+    @computed_field
+    def original_triplet_id(self) -> str | None:
+        if self.triplet_id and "_" in self.triplet_id:
+            return self.triplet_id.split("_")[0]
+        return None
 
 class AugmentedResponse(BaseModel):
     triplets: list[NewTriplet]
