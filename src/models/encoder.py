@@ -29,7 +29,6 @@ class AspectSupervisedEncoder(nn.Module):
         self,
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         projection_dim: int = 256,
-        aspect_dim: int = 128,
         num_heads: int = 4,
         dropout: float = 0.2,
         freeze_encoder: bool = True,
@@ -43,7 +42,7 @@ class AspectSupervisedEncoder(nn.Module):
         
         self.encoder = AutoModel.from_pretrained(model_name)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        hidden_size = self.encoder.config.hidden_size
+        self.hidden_size = self.encoder.config.hidden_size
 
         self.freeze_encoder = freeze_encoder
         self.use_lora = use_lora
@@ -68,7 +67,7 @@ class AspectSupervisedEncoder(nn.Module):
         
         # Main projection
         self.projection = nn.Sequential(
-            nn.Linear(hidden_size, projection_dim),
+            nn.Linear(self.hidden_size, projection_dim),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(projection_dim, projection_dim),
@@ -76,21 +75,21 @@ class AspectSupervisedEncoder(nn.Module):
         )
         
         # Aspect prediction heads
-        self.theme_head = self._make_aspect_head(projection_dim, aspect_dim, dropout)
-        self.action_head = self._make_aspect_head(projection_dim, aspect_dim, dropout)
-        self.outcome_head = self._make_aspect_head(projection_dim, aspect_dim, dropout)
+        self.theme_head = self._make_aspect_head(projection_dim, self.hidden_size, dropout)
+        self.action_head = self._make_aspect_head(projection_dim, self.hidden_size, dropout)
+        self.outcome_head = self._make_aspect_head(projection_dim, self.hidden_size, dropout)
         
         # Aspect text encoder projection
-        self.aspect_projection = nn.Sequential(
-            nn.Linear(hidden_size, aspect_dim),
-            nn.LayerNorm(aspect_dim)
-        )
+        # self.aspect_projection = nn.Sequential(
+        #     nn.Linear(self.hidden_size, aspect_dim),
+        #     nn.LayerNorm(aspect_dim)
+        # )
         
         # Cross-attention
-        self.aspect_cross_attention = AspectCrossAttentionModule(aspect_dim, num_heads, dropout)
+        self.aspect_cross_attention = AspectCrossAttentionModule(self.hidden_size, num_heads, dropout)
         
         self.projection_dim = projection_dim
-        self.aspect_dim = aspect_dim
+        # self.aspect_dim = aspect_dim
     
     def _make_aspect_head(self, in_dim: int, out_dim: int, dropout: float) -> nn.Module:
         return nn.Sequential(
@@ -124,7 +123,8 @@ class AspectSupervisedEncoder(nn.Module):
     
     def _encode_aspect_text(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
         raw = self._encode_raw(input_ids, attention_mask)
-        return self.aspect_projection(raw)
+        return raw
+        # return self.aspect_projection(raw)
     
     def _process_single_story(
         self,
